@@ -84,22 +84,12 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>#写作理由<br>因为当时看龙书的时候，感觉前一部分看的头痛欲裂，结果在不想看的时候，又来了一堆公式，当时就没看下去了，但是事后还是觉得弄懂了比较好，就算是对以前的数学知识的复习吧。</p>
-<p>#公式推导<br>龙书的第387页到达定值的转移函数为：</p>
-<p>$f_{d}(x) = gen_d \cup (x - kill_d)$</p>
-<p>当存在两个转移函数时，求组合函数：</p>
-<p>$$<br>f_1(x) = gen_1 \cup (x - kill_1) \<br>f_2(x) = gen_2 \cup (x - kill_2)<br>$$</p>
-<p>这里主要使用到了一个性质，即：</p>
-<p>$$<br>A - B = A \cap \overline{B}<br>$$</p>
-<p>求$f_2(f_1(x))$：</p>
-<p>$$<br>\begin{align}<br>f_2(f_1(x)) &amp;= gen_2 \cup (gen_1 \cup (x - kill_1) - kill_2) \<br>&amp;=gen_2 \cup (gen_1 \cup (x \cap \overline{kill_1}) - kill_2) \<br>&amp;=gen_2 \cup ((gen_1 \cup (x \cap \overline{kill_1})) \cap \overline{kill_2}) \<br>&amp;=gen_2 \cup (gen_1 \cap \overline{kill_2}) \cup (x \cap \overline{kill_1} \cap \overline{kill_2}) \<br>&amp;=gen_2 \cup (gen1 - kill_2) \cup (x - kill_1 - kill2)<br>\end{align}<br>$$</p>
-<p>所以整个基本块的转移函数为：</p>
-<p>$$<br>\begin{align}<br>f_B(x) &amp;= gen_B \cup (x - kill_B) \<br>kill_B &amp;= kill_1 \cup kill_2 \cup kill_3 \cup \cdots \cup kill_n \<br>gen_B &amp;= gen_n \cup (gen_{n - 1} - kill_n) \cup (gen_{n - 2} - kill_{n - 1} - kill_n) \cup \cdots \<br>&amp; \cup (gen_1 - kill_2 - kill_3 - \cdots - kill_n)\<br>\end{align}<br>$$</p>
+        <p><strong>test title</strong><br>some nonsense</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2018/05/04/shift-operation-based-on-LLVM/" data-id="cjgruqmoo0000z0txyu0c9lxf" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2018/05/04/shift-operation-based-on-LLVM/" data-id="cjgydjue40000d0txv0qq3rr1" class="article-share-link">Share</a>
       
       
     </footer>
@@ -144,7 +134,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2018/05/02/hello-world/" data-id="cjgruqmos0001z0tx7rlhkpgh" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2018/05/02/hello-world/" data-id="cjgydjue40001d0txm4utx4bt" class="article-share-link">Share</a>
       
       
     </footer>
