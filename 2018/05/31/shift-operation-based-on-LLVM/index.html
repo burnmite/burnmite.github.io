@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="John Doe"><title>PIC16芯片中如何优化有符号扩展 · Hexo</title><meta name="description" content="问题来源举个小栗子市面上有很多种芯片，其中对应的指令集也很丰富，可是不同的指令集对于各种基本功能的支持力度是不同的，以PIC16芯片和X86芯片相比较，举出一个很简单的例子，就是乘法，比如实现c = a * b：在X86中，实现如下：12movl b, %eax mul b
+这里不敢说乘法指令的全部"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">Hexo</a></h3></div></div><ul class="social-links"></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with BURNMITE&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">主页</a></li><li><a href="/about">关于我</a></li><li><a href="/archives">归档</a></li><li><a href="/links">小小的链接</a></li></div><div class="information"><div class="back_btn"><li><a class="fa fa-chevron-left" onclick="window.history.go(-1)"> </a></li></div><div class="avatar"><img></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>PIC16芯片中如何优化有符号扩展</a></h3></div><div class="post-content"><h1 id="问题来源"><a href="#问题来源" class="headerlink" title="问题来源"></a>问题来源</h1><h2 id="举个小栗子"><a href="#举个小栗子" class="headerlink" title="举个小栗子"></a>举个小栗子</h2><p>市面上有很多种芯片，其中对应的指令集也很丰富，可是不同的指令集对于各种基本功能的支持力度是不同的，以PIC16芯片和X86芯片相比较，举出一个很简单的例子，就是乘法，比如实现<code>c = a * b</code>：<br>在X86中，实现如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">movl b, %eax </span><br><span class="line">mul b</span><br></pre></td></tr></table></figure></p>
+<p>这里不敢说乘法指令的全部操作只需要一条指令，但是乘法的本身还是只需要一条指令的，即<code>mul b</code>，但是在PIC16中会变成什么样子呢，代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">movf a, w</span><br><span class="line">movf mul.atmp, f</span><br><span class="line">movf b, w</span><br><span class="line">movf mul.btmp, f</span><br><span class="line">call mul.i8</span><br><span class="line">movf mul.result, w</span><br><span class="line">movf c, 1</span><br></pre></td></tr></table></figure>
+<p>这里可能写的不规范，但是总体的意思是，将变量<code>a</code> 和 <code>b</code> 分别放到<strong>乘法库函数</strong>定义的符号<code>mul.atmp</code>和<code>mul.btmp</code>的符号里面，然后调用<strong>乘法库函数</strong><code>mul.i8</code>，最后从库函数预先设定的符号里面取值，放到符号<code>c</code>中，如果觉得不好理解，可以先看成下面的高级函数形式的声明：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">char mul.i8(char mul.atmp, char mul.btmp);</span><br></pre></td></tr></table></figure></p>
+<p>然后用户调用这个函数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mul.result = mul.i8(a, b);</span><br><span class="line">c = mul.result;</span><br></pre></td></tr></table></figure></p>
+<h2 id="小栗子的结论"><a href="#小栗子的结论" class="headerlink" title="小栗子的结论"></a>小栗子的结论</h2><p>从上面的小栗子可以看出，不同的芯片对于每种基本基本操作的支持力度真的是不一样的，所以本文题目中的操作—有符号扩展，在两个芯片中的支持力度也不同，下面开始分析</p>
+<h1 id="分析过程"><a href="#分析过程" class="headerlink" title="分析过程"></a>分析过程</h1><h2 id="所需要的指令集"><a href="#所需要的指令集" class="headerlink" title="所需要的指令集"></a>所需要的指令集</h2><table>
+<thead>
+<tr>
+<th>指令名称</th>
+<th style="text-align:center">指令作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rlf mem, w</code></td>
+<td style="text-align:center">将符号<code>mem</code>的值循环左移一位，最高位进入进位位，最终的值写入寄存器，不写入<code>f</code>中</td>
+</tr>
+<tr>
+<td><code>rlf mem, f</code></td>
+<td style="text-align:center">将符号<code>mem</code>的值循环左移一位，最高位进入进位位，原本符号位进入<code>mem</code>的最低位，写回到<code>f</code>中</td>
+</tr>
+<tr>
+<td><code>clrf mem</code></td>
+<td style="text-align:center">将<code>mem</code>处的值清零</td>
+</tr>
+<tr>
+<td><code>decf mem, f</code></td>
+<td style="text-align:center">将<code>mem</code>的值减一，并进行回写</td>
+</tr>
+<tr>
+<td><code>comf mem, f</code></td>
+<td style="text-align:center">将<code>mem</code>的值取反，并进行回写</td>
+</tr>
+<tr>
+<td><code>bcf mem, b</code></td>
+<td style="text-align:center">将<code>mem</code>的第<code>b</code>为清零</td>
+</tr>
+</tbody>
+</table>
+<h2 id="本芯片中如何用两条指令完成一次算数右移"><a href="#本芯片中如何用两条指令完成一次算数右移" class="headerlink" title="本芯片中如何用两条指令完成一次算数右移"></a>本芯片中如何用两条指令完成一次算数右移</h2><p>先告诉你们一个不幸的消息，PIC16芯片中关于移位只有循环右移和循环左移，没有算数右移算数左移和逻辑右移。而且PIC16里面也没有相应的标志位寄存器，对于标志位，PIC16的策略是保存在一个内存符号里面，好在PIC16有一条指令<code>bcf</code>，这条指令可以将某个内存符号中的特定位置0，对应的也有<code>bsf</code>指令，可以将特定的内存位置的特定位置1，那么如何使用两条指令进行模拟呢。下面直接说结论吧，。<br>算数右移：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rlf mem, w</span><br><span class="line">rrf mem, f</span><br></pre></td></tr></table></figure></p>
+<p>算数左移/逻辑左移：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bcf flags, 3 // 这里不一定是3，这里假设状态位的第三位是进位位，即这里是把进位位清零</span><br><span class="line">rlf mem, f</span><br></pre></td></tr></table></figure></p>
+<p>逻辑右移：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bcf flags, 3 // 这里不一定是3，这里假设状态位的第三位是进位位，即这里是把进位位清零</span><br><span class="line">rrf mem, f</span><br></pre></td></tr></table></figure></p>
+<h2 id="两种没有经过优化的方式"><a href="#两种没有经过优化的方式" class="headerlink" title="两种没有经过优化的方式"></a>两种没有经过优化的方式</h2><h3 id="使用库函数的方式"><a href="#使用库函数的方式" class="headerlink" title="使用库函数的方式"></a>使用库函数的方式</h3><p>就像第一部分所说的，如果使用库函数，那么是8位扩展为16位，需要7条指令，因为可以指定移位次数是7，代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">movf a, w</span><br><span class="line">movf srashift.atmp, f</span><br><span class="line">movl 7</span><br><span class="line">movf srashift.btmp, f</span><br><span class="line">call srashift.i8</span><br><span class="line">movf srashift.result, w</span><br><span class="line">movf c, f</span><br></pre></td></tr></table></figure></p>
+<p>同样可以看成高级语言函数声明：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">srashift.result = srashift(char srashift.atmp, char srashift.btmp);</span><br></pre></td></tr></table></figure></p>
+<p>用户可以调用这个函数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">srashift.result = srashift(a, 7);</span><br><span class="line">c = srashift.result;</span><br></pre></td></tr></table></figure></p>
+<p>而PIC16中的最高位宽是32位，最低位宽是8位，所以这里存在三种有符号扩展，分别为<code>i8-&gt;i16</code>， <code>i8 -&gt; i32</code>， <code>i16 -&gt; i32</code>，这三种有符号扩展分别所需要的指令条数为7条，至少11条，和13条。这是统计数据，相信我，没骗你们。</p>
+<h3 id="重复生成移位指令"><a href="#重复生成移位指令" class="headerlink" title="重复生成移位指令"></a>重复生成移位指令</h3><p>这个小题目看起来神秘莫测的，但是其实非常2，所谓的重复生成移位指令就是一条一条的移位指令的写，这里以8位扩展为16位为例，可以看出位宽只差为8位，可是本平台每移动一次就需要两条指令，所以如果是8位扩展为16位需要16条指令。同理8位扩展32位需要48条指令，16位扩展32位需要32条指令。</p>
+<h2 id="本博客提出的方法"><a href="#本博客提出的方法" class="headerlink" title="本博客提出的方法"></a>本博客提出的方法</h2><p>直接说出方法吧，这里以8位扩展16为例，设低位保存在<code>mem + 0</code>，值为<code>00000000</code>，高位保存在<code>mem + 1</code>中，由于申请这个符号的时候值是未知的，所以设置为<code>xxxxxxxx</code>，完成有符号移位只需要五条指令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">clrf mem + 1, f</span><br><span class="line">rlf mem + 0, w</span><br><span class="line">rlf mem + 1, f</span><br><span class="line">decf mem + 1, f</span><br><span class="line">comf mem + 1, f</span><br></pre></td></tr></table></figure></p>
+<p>让我们来看看这五条指令的执行效果：</p>
+<table>
+<thead>
+<tr>
+<th>指令名称</th>
+<th style="text-align:center">执行效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>高位初始值</td>
+<td style="text-align:center">xxxxxxxx</td>
+</tr>
+<tr>
+<td><code>clrf mem + 1, f</code></td>
+<td style="text-align:center">00000000</td>
+</tr>
+<tr>
+<td><code>rlf mem + 0, w</code></td>
+<td style="text-align:center">00000000</td>
+</tr>
+<tr>
+<td><code>rlf mem + 1, f</code></td>
+<td style="text-align:center">00000001</td>
+</tr>
+<tr>
+<td><code>decf mem + 1, f</code></td>
+<td style="text-align:center">00000000</td>
+</tr>
+<tr>
+<td><code>comf mem + 1, f</code></td>
+<td style="text-align:center">11111111</td>
+</tr>
+</tbody>
+</table>
+<p>可以看出，最后的高位是<code>11111111</code>，与<code>mem + 0</code>的最高位相等。容易证明，对于正数来说也是如此，最后的结果是<code>00000000</code></p>
+<h1 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h1><p>从这篇博客里面也可以得知，不管一条指令有多么简单，都不要把这条指令的实现当成理所当然的，就比如乘法，在PIC16里面是没有对应的指令来实现的，再退一步，加法，也是通过各种位运算实现的呀。对于不同的芯片的相同指令，有不同的代码生成方法，这正是编译的乐趣所在，嘻嘻~</p>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2018-05-31</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a class="fa fa-bookmark" href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank"></a></div><div class="weibo"><a class="fa fa-weibo" href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));"></a></div><div class="twitter"><a class="fa fa-twitter" href="http://twitter.com/home?status=,http://yoursite.com/2018/05/31/shift-operation-based-on-LLVM/,Hexo,PIC16芯片中如何优化有符号扩展,;"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a class="btn" role="navigation" href="/2018/05/31/hello-world/" title="Hello World">Próximo post</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
