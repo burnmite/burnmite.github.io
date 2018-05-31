@@ -7,7 +7,7 @@ tags:
 <script type="text/javascript"
        src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-some nonsense
+今天做了什么事
 
 what the hell?
 
@@ -23,5 +23,3 @@ int main() {
     return 0;
 }
 ```
-
-$a = a + b$
