@@ -3,7 +3,7 @@ title: beamer&latex学习
 ---
 
 # 学习来源
-学习来源是一个关于LLVM的slides，感觉做的非常简约大气，所以分析里面的自定义的command和environment是如何设计的
+学习来源是一个关于LLVM的slides，感觉做的非常简约大气，所以分析里面的自定义的command和environment是如何设计的，这里分享这份文档的链接:[酷炫的slides](http://llvm.org/devmtg/2014-10/Slides/Cormack-BuildingAnLLVMBackend.pdf)
 
 # 定义代码文件名
 观察下面的图片:
@@ -22,6 +22,32 @@ title: beamer&latex学习
 4. 可以把`\hfill`和最右边的`\hspace`结合起来看，`\hfill`意思就是将左边水平空间尽可能的填满，`\hspace`将右边的水平边距指定为0.5em
 5. `\vspace*`暂时不清楚和`\vspace`有什么区别
 6. 其中根据css中的定义，`em`和`ex`都是一个比例单位，其中，`em`为当前字体尺寸，即如果当前字体尺寸为12pt，则`1em=12pt`，`ex`是一个字体的`x-height`，`x-height`通常是当前字体尺寸的一半。
+
+## 定义命令和使用命令的一些概要
+> 我就把吐槽放在这里了，一个wiki等于十个百度，emmmmmm......
+在这个ppt开头的定义中，有这么两个命令：
+```latex
+\newcommand{\sourcebox}[3][firstline=1]{%
+  \begin{tcolorbox}\VerbatimInput[#1]{#2}\end{tcolorbox}
+  \codecaption{#3}}
+
+\newcommand{\examplebox}[2][firstline=1]{\sourcebox[#1]{examples/#2}{#2}}
+```
+可以看出是`\examplebox`使用了`\sourcebox`来定义自己，其中`\newcommand`的格式为：
+```latex
+\newcommand{name}[num][default]{definition}
+```
+而使用命令的格式为：
+```latex
+\name{arg1}{arg2}...
+```
+可是如果根据这种格式可以发现上面的`\sourcebox`是什么鬼：
+```latex
+\sourcebox[#1]{examples/#2}{#2}
+```
+最后根据wiki的说法，这里说说我自己的理解，即如果新定义的命令的前n个参数有默认值，但是需要在使用命令的时候显式地写出来，那么就不能使用`{}`而要使用`[]`，即这里使用`\sourcebox`的意思是：
+1. 显示指定第一个参数为`firstline=1`
+2. 指定第二个参数和第三个参数为`examples/#2`和`#2`
 
 ## 定义代码框的格式
 代码框的格式如下：
