@@ -1,5 +1,6 @@
 ---
 title: git命令记录
+category: git
 ---
 
 # 说明

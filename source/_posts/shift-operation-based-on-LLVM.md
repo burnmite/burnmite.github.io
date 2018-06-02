@@ -1,7 +1,7 @@
 ---
 title: PIC16芯片中如何优化有符号扩展
 date: 2018-05-31 20:34:57
-tags: 
+category: PIC16, compiler, backend
 ---
 
 # 问题来源

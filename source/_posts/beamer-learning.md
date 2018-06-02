@@ -1,5 +1,6 @@
 ---
 title: beamer&latex学习
+category: beamer, latex
 ---
 
 # 学习来源
